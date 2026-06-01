@@ -31,6 +31,27 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', handleScroll);
   handleScroll();
 
+  // ── SCROLLSPY (ACTIVE NAV STATE) ──
+  const sections = document.querySelectorAll('section[id]');
+  const scrollSpy = () => {
+    const currentScroll = window.scrollY + 120;
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.offsetHeight;
+      const sectionId = section.getAttribute('id');
+      const targetNavLink = document.querySelector(`.nav__link[href="#${sectionId}"]`);
+
+      if (targetNavLink) {
+        if (currentScroll >= sectionTop && currentScroll < sectionTop + sectionHeight) {
+          targetNavLink.classList.add('active');
+        } else {
+          targetNavLink.classList.remove('active');
+        }
+      }
+    });
+  };
+  window.addEventListener('scroll', scrollSpy);
+
   // ── LIGHT / DARK THEME SYSTEM ──
   const themeToggle = document.getElementById('themeToggle');
   const savedTheme = localStorage.getItem('theme') || 'light';
@@ -48,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── SCROLL REVEAL ANIMATION ──
   const revealElements = document.querySelectorAll('.reveal');
   const revealOnScroll = () => {
-    const triggerBottom = window.innerHeight * 0.85;
+    const triggerBottom = window.innerHeight * 0.88;
     revealElements.forEach(el => {
       const elTop = el.getBoundingClientRect().top;
       if (elTop < triggerBottom) {
@@ -83,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.5 });
+  }, { threshold: 0.2 });
 
   counters.forEach(counter => counterObserver.observe(counter));
 
@@ -126,6 +147,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── PHONE INPUT MASK & VALIDATION ──
+  const phoneInput = document.getElementById('formPhone');
+  if (phoneInput) {
+    phoneInput.addEventListener('focus', () => {
+      if (!phoneInput.value) {
+        phoneInput.value = '+996 ';
+      }
+    });
+
+    phoneInput.addEventListener('blur', () => {
+      if (phoneInput.value.trim() === '+996') {
+        phoneInput.value = '';
+      }
+    });
+
+    phoneInput.addEventListener('input', (e) => {
+      // Разрешаем вводить только цифры, знак плюс и пробелы/скобки
+      let matrix = '+996 (___) __-__-__';
+      let i = 0;
+      let def = matrix.replace(/\D/g, '');
+      let val = phoneInput.value.replace(/\D/g, '');
+      
+      if (def.length >= val.length) val = def;
+      
+      phoneInput.value = matrix.replace(/./g, function(a) {
+        return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? '' : a;
+      });
+    });
+  }
+
   // ── APPOINTMENT FORM SUBMIT TOAST ──
   const form = document.getElementById('appointmentForm');
   const toast = document.getElementById('formToast');
@@ -134,7 +185,24 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      // Имитация успешной отправки на бэкенд
+      const nameInput = document.getElementById('formName');
+      const serviceSelect = document.getElementById('formService');
+      const dateInput = document.getElementById('formDate');
+      let isValid = true;
+
+      // Базовая валидация
+      [nameInput, phoneInput, serviceSelect, dateInput].forEach(input => {
+        if (!input.value || input.value.trim() === '' || (input === phoneInput && phoneInput.value.length < 19)) {
+          input.classList.add('invalid');
+          isValid = false;
+        } else {
+          input.classList.remove('invalid');
+        }
+      });
+
+      if (!isValid) return;
+
+      // Имитация отправки данных на сервер
       toast.classList.add('visible');
       form.reset();
 
